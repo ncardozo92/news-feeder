@@ -1,10 +1,15 @@
 package api
 
-import "github.com/labstack/echo/v4"
+import (
+	"net/http"
 
-type Handler struct {
-}
+	"github.com/labstack/echo/v4"
+)
 
-func (h Handler) getFeed(c echo.Context) error {
-	return nil
+const (
+	PATH_FEED = "/feed"
+)
+
+func GetFeed(c echo.Context) error {
+	return c.NoContent(http.StatusNotImplemented)
 }
