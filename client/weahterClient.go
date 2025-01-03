@@ -14,7 +14,6 @@ import (
 
 const (
 	WEATHER_API_URL_ENV            = "WEATHER_API_URL"
-	MAX_STATUS_CODE_SUCCESS        = 399
 	MESSAGE_UNSUCCESSFULL_RESPONSE = "unsuccessfulL response from weather API, HTTP status was %d"
 )
 
@@ -40,6 +39,7 @@ func ExecWeatherRequest(latitude, longitude, GTMZone string) (WeatherResponseDTO
 
 	if requestErr != nil {
 		log.Errorf("Error")
+		return responseDTO, requestErr
 	}
 
 	response, fetchingErr := weatherClient.Do(request)

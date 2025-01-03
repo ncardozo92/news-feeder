@@ -22,8 +22,8 @@ func (m *mockWeatherClient) Do(req *http.Request) (*http.Response, error) {
 
 var (
 	// GetDoFunc fetches the mock client's `Do` func
-	getDoFunc           func(req *http.Request) (*http.Response, error)
-	responseBodySuccess string = `{
+	getDoFunc                  func(req *http.Request) (*http.Response, error)
+	weatherResponseBodySuccess string = `{
     "latitude": 52.52,
     "longitude": 13.419998,
     "generationtime_ms": 0.030040740966796875,
@@ -55,10 +55,10 @@ func init() {
 	weatherClient = &mockWeatherClient{}
 }
 
-func TestFetchSuccess(t *testing.T) {
+func TestFetchWeatherSuccess(t *testing.T) {
 
 	getDoFunc = func(req *http.Request) (*http.Response, error) {
-		res := http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader([]byte(responseBodySuccess)))}
+		res := http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader([]byte(weatherResponseBodySuccess)))}
 
 		return &res, nil
 	}
