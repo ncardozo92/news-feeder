@@ -12,11 +12,9 @@ import (
 
 // Mock for testing purposes
 type mockWeatherClient struct {
-	//doFunc func(*http.Client) (*http.Response, error)
 }
 
 func (m *mockWeatherClient) Do(req *http.Request) (*http.Response, error) {
-	// coming soon!
 	return getDoFunc(req)
 }
 
@@ -52,10 +50,13 @@ var (
 
 // We set the mock to use in the tests
 func init() {
-	weatherClient = &mockWeatherClient{}
+	WeatherClient = &mockWeatherClient{}
 }
 
 func TestFetchWeatherSuccess(t *testing.T) {
+
+	responseCh := make(chan WeatherResponseDTO)
+	errCh := make(chan string)
 
 	getDoFunc = func(req *http.Request) (*http.Response, error) {
 		res := http.Response{StatusCode: 200, Body: io.NopCloser(bytes.NewReader([]byte(weatherResponseBodySuccess)))}
@@ -63,23 +64,28 @@ func TestFetchWeatherSuccess(t *testing.T) {
 		return &res, nil
 	}
 
-	response, err := ExecWeatherRequest("-34.6183919", "-58.442937", "auto")
+	go ExecWeatherRequest("-34.6183919", "-58.442937", "auto", responseCh, errCh)
 
-	assert.NoError(t, err)
+	response := <-responseCh
+
 	assert.NotEmpty(t, response.Hourly.Temperatures)
 	assert.NotEmpty(t, response.Hourly.Times)
 
 }
 
 func TestFetchWithStatus500Fails(t *testing.T) {
+
+	responseCh := make(chan WeatherResponseDTO)
+	errCh := make(chan string)
+
 	getDoFunc = func(req *http.Request) (*http.Response, error) {
 		res := http.Response{StatusCode: 500, Body: io.NopCloser(bytes.NewReader([]byte("")))}
 
 		return &res, nil
 	}
 
-	_, err := ExecWeatherRequest("-34.6183919", "-58.442937", "auto")
+	go ExecWeatherRequest("-34.6183919", "-58.442937", "auto", responseCh, errCh)
 
-	assert.Error(t, err)
-	assert.Equal(t, fmt.Sprintf(MESSAGE_UNSUCCESSFULL_RESPONSE, 500), err.Error())
+	err := <-errCh
+	assert.Equal(t, fmt.Sprintf(MESSAGE_UNSUCCESSFULL_WEATHER_RESPONSE, 500), err)
 }

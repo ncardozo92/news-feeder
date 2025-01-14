@@ -23,6 +23,8 @@ func main() {
 
 	e.GET(api.PATH_FEED, api.GetFeed)
 
+	e.Start(":8080")
+
 }
 
 func flagEnvIsPresent(args []string) bool {

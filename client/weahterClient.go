@@ -8,22 +8,20 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-
-	"github.com/labstack/gommon/log"
 )
 
 const (
-	WEATHER_API_URL_ENV            = "WEATHER_API_URL"
-	MESSAGE_UNSUCCESSFULL_RESPONSE = "unsuccessfulL response from weather API, HTTP status was %d"
+	WEATHER_API_URL_ENV                    = "WEATHER_API_URL"
+	MESSAGE_UNSUCCESSFULL_WEATHER_RESPONSE = "unsuccessfulL response from weather API, HTTP status was %d"
 )
 
-var weatherClient HttpClient
+var WeatherClient HttpClient
 
-func Init() {
-	weatherClient = &http.Client{}
+func init() {
+	WeatherClient = &http.Client{}
 }
 
-func ExecWeatherRequest(latitude, longitude, GTMZone string) (WeatherResponseDTO, error) {
+func ExecWeatherRequest(latitude, longitude, GTMZone string, weatherCh chan<- WeatherResponseDTO, errCh chan<- string) {
 
 	queryString := url.Values{
 		"latitude":  []string{latitude},
@@ -35,19 +33,21 @@ func ExecWeatherRequest(latitude, longitude, GTMZone string) (WeatherResponseDTO
 
 	fullApiUrl := fmt.Sprintf("%s?%s", os.Getenv(WEATHER_API_URL_ENV), queryString.Encode())
 
-	request, requestErr := http.NewRequest(http.MethodGet, fullApiUrl, bytes.NewReader([]byte("")))
+	request, requestErr := http.NewRequest(http.MethodGet, fullApiUrl, bytes.NewReader([]byte{}))
 
 	if requestErr != nil {
-		log.Errorf("Error")
-		return responseDTO, requestErr
+		errCh <- requestErr.Error()
+		return
 	}
 
-	response, fetchingErr := weatherClient.Do(request)
+	response, fetchingErr := WeatherClient.Do(request)
 
 	if fetchingErr != nil {
-		return responseDTO, fetchingErr
+		errCh <- fetchingErr.Error()
+		return
 	} else if response.StatusCode > MAX_STATUS_CODE_SUCCESS {
-		return responseDTO, fmt.Errorf(MESSAGE_UNSUCCESSFULL_RESPONSE, response.StatusCode)
+		errCh <- fmt.Sprintf(MESSAGE_UNSUCCESSFULL_WEATHER_RESPONSE, response.StatusCode)
+		return
 	}
 
 	defer response.Body.Close()
@@ -55,12 +55,15 @@ func ExecWeatherRequest(latitude, longitude, GTMZone string) (WeatherResponseDTO
 	readResponseBody, readingResponseBodyErr := io.ReadAll(response.Body)
 
 	if readingResponseBodyErr != nil {
-		return WeatherResponseDTO{}, readingResponseBodyErr
+		errCh <- readingResponseBodyErr.Error()
+		return
 	}
 
 	if unmarshallingErr := json.Unmarshal(readResponseBody, &responseDTO); unmarshallingErr != nil {
-		return WeatherResponseDTO{}, unmarshallingErr
+		errCh <- unmarshallingErr.Error()
+		return
 	}
 
-	return responseDTO, nil
+	// Everything is OK
+	weatherCh <- responseDTO
 }

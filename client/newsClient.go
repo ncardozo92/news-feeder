@@ -7,18 +7,21 @@ import (
 	"io"
 	"net/http"
 	"os"
-
-	"github.com/labstack/gommon/log"
 )
 
 const (
-	NEWS_API_URL_ENV = "NEWS_API_URL"
-	NEWS_API_KEY     = "NEWS_API_KEY"
+	NEWS_API_URL_ENV                    = "NEWS_API_URL"
+	NEWS_API_KEY                        = "NEWS_API_KEY"
+	MESSAGE_UNSUCCESSFULL_NEWS_RESPONSE = "unsuccessfulL response from news API, HTTP status was %d"
 )
 
-var newsClient HttpClient
+var NewsClient HttpClient
 
-func ExecNewsRequest() (NewsResponseDTO, error) {
+func init() {
+	NewsClient = &http.Client{}
+}
+
+func ExecNewsRequest(newsCh chan<- NewsResponseDTO, errCh chan<- string) {
 
 	responseDTO := NewsResponseDTO{}
 	newsUrl := os.Getenv(NEWS_API_URL_ENV)
@@ -26,7 +29,7 @@ func ExecNewsRequest() (NewsResponseDTO, error) {
 
 	// for testing purposes
 	if newsUrl == "" {
-		newsUrl = "http://localhost:8089?api_jey=%s"
+		newsUrl = "http://localhost:8089?api_key=%s"
 	}
 
 	fullApiUrl := fmt.Sprintf(newsUrl, newsApiKey)
@@ -34,33 +37,37 @@ func ExecNewsRequest() (NewsResponseDTO, error) {
 	request, requestErr := http.NewRequest(http.MethodGet, fullApiUrl, bytes.NewReader([]byte("")))
 
 	if requestErr != nil {
-		log.Errorf("Error")
-		return responseDTO, requestErr
+		errCh <- "Error generating requets to get the latetest news"
+		return
 	}
 
-	response, fetchingErr := newsClient.Do(request)
+	response, fetchingErr := NewsClient.Do(request)
 
 	if fetchingErr != nil {
-		return responseDTO, fetchingErr
+		errCh <- "error fetching data from news API"
+		return
 	}
 
 	if response.StatusCode >= MAX_STATUS_CODE_SUCCESS {
-		return responseDTO, fmt.Errorf("error fetching data from news API")
+		errCh <- fmt.Sprintf(MESSAGE_UNSUCCESSFULL_NEWS_RESPONSE, response.StatusCode)
+		return
 	}
 
 	responseBody, readingResponseBodyErr := io.ReadAll(response.Body)
 
 	if readingResponseBodyErr != nil {
-		return NewsResponseDTO{}, readingResponseBodyErr
+		errCh <- readingResponseBodyErr.Error()
+		return
 	}
 
 	if unmarshalingErr := json.Unmarshal(responseBody, &responseDTO); unmarshalingErr != nil {
-		return NewsResponseDTO{}, unmarshalingErr
+		errCh <- unmarshalingErr.Error()
+		return
 	}
 
 	removeDeletedNews(&responseDTO)
 
-	return responseDTO, nil
+	newsCh <- responseDTO
 }
 
 func removeDeletedNews(dto *NewsResponseDTO) {
