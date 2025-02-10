@@ -67,7 +67,5 @@ func mapNews(responseDTO *FeedResponseDTO, newsResponse client.NewsResponseDTO) 
 }
 
 func mapWeather(responseDTO *FeedResponseDTO, weatherResponse client.WeatherResponseDTO) {
-	if len(weatherResponse.Hourly.Temperatures) > 0 {
-		responseDTO.Temperature = weatherResponse.Hourly.Temperatures[0]
-	}
+	responseDTO.Temperature = weatherResponse.CurrentWeather.Temperature
 }

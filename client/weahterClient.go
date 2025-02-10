@@ -13,6 +13,7 @@ import (
 const (
 	WEATHER_API_URL_ENV                    = "WEATHER_API_URL"
 	MESSAGE_UNSUCCESSFULL_WEATHER_RESPONSE = "unsuccessfulL response from weather API, HTTP status was %d"
+	CURRENT_QUERY_VALUE                    = "temperature_2m"
 )
 
 var WeatherClient HttpClient
@@ -27,6 +28,7 @@ func ExecWeatherRequest(latitude, longitude, GTMZone string, weatherCh chan<- We
 		"latitude":  []string{latitude},
 		"longitude": []string{longitude},
 		"timezone":  []string{GTMZone},
+		"current":   []string{CURRENT_QUERY_VALUE},
 	}
 
 	responseDTO := WeatherResponseDTO{}

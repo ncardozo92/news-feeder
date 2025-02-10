@@ -24,26 +24,20 @@ var (
 	weatherResponseBodySuccess string = `{
     "latitude": 52.52,
     "longitude": 13.419998,
-    "generationtime_ms": 0.030040740966796875,
-    "utc_offset_seconds": 0,
-    "timezone": "GMT",
-    "timezone_abbreviation": "GMT",
+    "generationtime_ms": 0.022292137145996094,
+    "utc_offset_seconds": 3600,
+    "timezone": "Europe/Berlin",
+    "timezone_abbreviation": "GMT+1",
     "elevation": 38.0,
-    "hourly_units": {
+    "current_units": {
         "time": "iso8601",
+        "interval": "seconds",
         "temperature_2m": "°C"
     },
-    "hourly": {
-        "time": [
-            "2024-12-12T00:00",
-            "2024-12-12T01:00",
-            "2024-12-12T02:00"
-        ],
-        "temperature_2m": [
-            1.7,
-            1.7,
-            1.6
-        ]
+    "current": {
+        "time": "2025-01-22T20:00",
+        "interval": 900,
+        "temperature_2m": 1.2
     }
 }`
 )
@@ -66,10 +60,12 @@ func TestFetchWeatherSuccess(t *testing.T) {
 
 	go ExecWeatherRequest("-34.6183919", "-58.442937", "auto", responseCh, errCh)
 
-	response := <-responseCh
-
-	assert.NotEmpty(t, response.Hourly.Temperatures)
-	assert.NotEmpty(t, response.Hourly.Times)
+	select {
+	case response := <-responseCh:
+		assert.Equal(t, float32(1.2), response.CurrentWeather.Temperature)
+	case err := <-errCh:
+		t.Error(err)
+	}
 
 }
 

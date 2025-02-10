@@ -1,12 +1,11 @@
 package client
 
 type WeatherResponseDTO struct {
-	Hourly HourlyDTO `json:"hourly"`
+	CurrentWeather CurrentWeatherDTO `json:"current"`
 }
 
-type HourlyDTO struct {
-	Times        []string  `json:"time"`
-	Temperatures []float32 `json:"temperature_2m"`
+type CurrentWeatherDTO struct {
+	Temperature float32 `json:"temperature_2m"`
 }
 
 type NewsResponseDTO struct {
